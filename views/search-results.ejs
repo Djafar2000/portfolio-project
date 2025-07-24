@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %></title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <header>
+        <h1>Search Results</h1>
+        <%- include('partials/navigation') %>
+    </header>
+    <main>
+        <h2>Results for "<%= query %>"</h2>
+        <% if (results.length > 0) { %>
+            <div class="posts-list">
+                <% results.forEach(post => { %>
+                    <article class="post">
+                        <h3><%= post.title %></h3>
+                        <p><%= post.content %></p>
+                    </article>
+                <% }); %>
+            </div>
+        <% } else { %>
+            <p>No posts found matching your search.</p>
+        <% } %>
+    </main>
+</body>
+</html>

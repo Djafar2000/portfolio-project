@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %></title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <header>
+        <h1>Welcome to My Application</h1>
+        <%- include('partials/navigation') %>
+    </header>
+    <main>
+         <% if (session.username) { %>
+        <h2>Welcome back, <%= session.username %>!</h2>
+    <% } else { %>
+        <p>This is the home page. From here you can navigate to other parts of the application.</p>
+    <% } %>
+    </main>
+</body>
+</html>

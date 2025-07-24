@@ -1,0 +1,17 @@
+<nav>
+    <a href="/">Home</a>
+    <a href="/about">About</a>
+    <% if (session.userId) { %>
+        <a href="/add-post">Add Post</a> <!-- New link -->
+        <a href="/logout">Logout</a>
+    <% } else { %>
+        <a href="/register">Register</a>
+        <a href="/login">Login</a>
+    <% } %>
+
+    <!-- New Search Form -->
+    <form action="/search" method="GET" class="search-form">
+        <input type="text" name="query" placeholder="Search posts..." required>
+        <button type="submit">Search</button>
+    </form>
+</nav>
