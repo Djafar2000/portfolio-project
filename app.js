@@ -5,16 +5,17 @@ const mysql = require('mysql2');
 const bcrypt = require('bcrypt'); 
 const session = require('express-session'); 
 const FileStore = require('session-file-store')(session);
+const axios = require('axios');
 
 // Initialize the Express app
 const app = express();
-const port = 3000;
+const port = process.env.PORT || 3000;
 
 // Create a connection to the database
-const db = mysql.createConnection({
+const db = mysql.createConnection(process.env.JAWSDB_URL || {
     host: 'localhost',
     user: 'root',
-    password: 'Ayoub2006', 
+    password: 'Ayoub2006', // Your local password
     database: 'webapp_db'
 });
 
@@ -30,7 +31,7 @@ db.connect((err) => {
 // Configure session middleware
 app.use(session({
     store: new FileStore(), // Use file-based session storage
-    secret: 'a-very-strong-secret-key-that-is-hard-to-guess', // IMPORTANT: Change this to a random, secret string
+    secret: 'a-very-strong-secret-key-that-is-hard-to-guess', 
     resave: false, // Don't save session if unmodified
     saveUninitialized: false, // Don't create session until something stored
     cookie: {
@@ -63,8 +64,39 @@ const requireLogin = (req, res, next) => {
 // --- Routes ---
 
 // Home page route
-app.get('/', (req, res) => {
-    res.render('home', { title: 'Home' });
+// Home page route
+app.get('/', async (req, res) => {
+    let catFact = null;
+    try {
+        // 1. Fetch data from the external Cat Fact API
+        const response = await axios.get('https://catfact.ninja/fact');
+        catFact = response.data.fact;
+    } catch (error) {
+        console.error('Error fetching cat fact:', error.message);
+        catFact = 'Could not fetch a fun fact at this time.';
+    }
+
+    // 2. Fetch all posts from our own database
+    const sql = `
+        SELECT posts.id, posts.title, posts.content, posts.created_at, users.username 
+        FROM posts 
+        JOIN users ON posts.user_id = users.id
+        ORDER BY posts.created_at DESC
+    `;
+
+    db.query(sql, (err, posts) => {
+        if (err) {
+            console.error('Database error fetching posts:', err);
+            return res.status(500).send('Server error');
+        }
+
+        // 3. Render the page with both the cat fact and our posts
+        res.render('home', {
+            title: 'Home',
+            catFact: catFact, // Pass the cat fact to the view
+            posts: posts      // Pass the posts to the view
+        });
+    });
 });
 
 // About page route
@@ -114,7 +146,7 @@ app.post('/register', async (req, res) => {
     }
 });
 
-// Add this with your other GET routes
+
 app.get('/search', (req, res) => {
     const query = req.query.query;
 
@@ -146,25 +178,6 @@ app.get('/add-post', requireLogin, (req, res) => {
     res.render('add-post', { title: 'Add a New Post' });
 });
 
-app.post('/add-post', requireLogin, (req, res) => {
-    const { title, content } = req.body;
-    const userId = req.session.userId;
-
-    if (!title || !content) {
-        // In a real app, you'd render the form again with an error
-        return res.status(400).send('Title and content are required.');
-    }
-
-    const sql = 'INSERT INTO posts (title, content, user_id) VALUES (?, ?, ?)';
-    db.query(sql, [title, content, userId], (err, result) => {
-        if (err) {
-            console.error('Database error:', err);
-            return res.status(500).send('Server error');
-        }
-        // Redirect to the homepage to see the new post (we'll display posts there later)
-        res.redirect('/');
-    });
-});
 
 // Route to handle the login form submission
 app.post('/login', (req, res) => {
@@ -205,6 +218,24 @@ app.post('/login', (req, res) => {
     });
 });
 
+app.post('/add-post', requireLogin, (req, res) => {
+    const { title, content } = req.body;
+    const userId = req.session.userId;
+
+    if (!title || !content) {
+        return res.status(400).send('Title and content are required.');
+    }
+
+    const sql = 'INSERT INTO posts (title, content, user_id) VALUES (?, ?, ?)';
+    db.query(sql, [title, content, userId], (err, result) => {
+        if (err) {
+            console.error('Database error:', err);
+            return res.status(500).send('Server error');
+        }
+        res.redirect('/');
+    });
+});
+
 //  Route for logging out
 app.get('/logout', (req, res) => {
     req.session.destroy(err => {
@@ -214,6 +245,29 @@ app.get('/logout', (req, res) => {
         // Clear the cookie and redirect
         res.clearCookie('connect.sid'); // The default session cookie name
         res.redirect('/login');
+    });
+});
+
+// --- API ROUTES ---
+
+// API endpoint to get all posts
+app.get('/api/posts', (req, res) => {
+    // We join the posts table with the users table to get the author's username
+    const sql = `
+        SELECT posts.id, posts.title, posts.content, posts.created_at, users.username 
+        FROM posts 
+        JOIN users ON posts.user_id = users.id
+        ORDER BY posts.created_at DESC
+    `;
+
+    db.query(sql, (err, results) => {
+        if (err) {
+            console.error('API Database error:', err);
+            // Send a 500 Internal Server Error status with a JSON error message
+            return res.status(500).json({ error: 'Failed to fetch posts from the database.' });
+        }
+        // Send the results as a JSON response
+        res.json(results);
     });
 });
 

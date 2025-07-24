@@ -12,11 +12,33 @@
         <%- include('partials/navigation') %>
     </header>
     <main>
-         <% if (session.username) { %>
+    <% if (session.username) { %>
         <h2>Welcome back, <%= session.username %>!</h2>
-    <% } else { %>
-        <p>This is the home page. From here you can navigate to other parts of the application.</p>
     <% } %>
-    </main>
+
+    <!-- New Section for External API Data -->
+    <div class="api-data">
+        <h3>A Fun Fact for You</h3>
+        <p><em><%= catFact %></em></p>
+    </div>
+
+    <hr>
+
+    <!-- New Section for Displaying Database Posts -->
+    <h2>Recent Posts</h2>
+    <% if (posts.length > 0) { %>
+        <div class="posts-list">
+            <% posts.forEach(post => { %>
+                <article class="post">
+                    <h3><%= post.title %></h3>
+                    <p class="post-meta">by <%= post.username %> on <%= new Date(post.created_at).toLocaleDateString() %></p>
+                    <p><%= post.content %></p>
+                </article>
+            <% }); %>
+        </div>
+    <% } else { %>
+        <p>No posts have been made yet. Be the first!</p>
+    <% } %>
+</main>
 </body>
 </html>
