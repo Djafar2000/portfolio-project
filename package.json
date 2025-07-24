@@ -8,7 +8,7 @@
   },
   "author": "Djafar Aitseguer",
   "license": "ISC",
-  "engines": { // <-- ADD THIS SECTION
+  "engines": { 
     "node": "18.x"
   },
   "dependencies": {
